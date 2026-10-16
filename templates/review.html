@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Review{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stage-card {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+        padding: 1.5rem; text-align: center;
+    }
+    .word-big { font-size: 2rem; font-weight: 700; color: var(--text); }
+    .word-pron { font-size: 0.95rem; color: var(--text-muted); font-style: italic; margin-top: 0.15rem; }
+    .word-img { max-height: 150px; border-radius: 8px; margin: 0.75rem auto; display: block; }
+    .word-meaning { font-size: 1.15rem; font-weight: 600; color: #f39c12; margin-top: 0.5rem; }
+    .word-example { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.4rem; line-height: 1.5; }
+    .word-audio { margin-top: 0.5rem; }
+    .word-audio audio { height: 32px; width: 100%; max-width: 280px; }
+
+    .progress-dots { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .progress-dot {
+        width: 10px; height: 10px; border-radius: 50%; background: var(--border);
+        transition: background 0.2s;
+    }
+    .progress-dot.active { background: var(--accent); }
+    .progress-dot.done { background: var(--success); }
+
+    .nav-btn {
+        padding: 0.5rem 1.5rem; border-radius: 8px; border: none;
+        font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    }
+    .nav-btn.primary { background: var(--accent); color: #fff; }
+    .nav-btn.primary:hover { background: var(--accent-light); }
+    .nav-btn.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+
+    .mode-select { display: flex; flex-direction: column; gap: 0.5rem; max-width: 340px; margin: 0 auto; }
+    .mode-btn {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+        padding: 0.9rem 1rem; color: var(--text); text-align: left; cursor: pointer;
+        transition: all 0.15s;
+    }
+    .mode-btn:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+    .mode-btn .mode-title { font-weight: 600; font-size: 0.95rem; }
+    .mode-btn .mode-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    .choices { display: flex; flex-direction: column; gap: 0.5rem; max-width: 360px; margin: 0.75rem auto 0; }
+    .choice-btn {
+        background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+        padding: 0.65rem 1rem; color: var(--text); font-size: 0.95rem; font-weight: 500;
+        cursor: pointer; transition: all 0.15s; text-align: center;
+    }
+    .choice-btn:hover { border-color: var(--accent); }
+    .choice-btn.correct { border-color: var(--success); background: rgba(46,204,113,0.15); color: var(--success); }
+    .choice-btn.wrong { border-color: var(--danger); background: rgba(231,76,60,0.15); color: var(--danger); }
+    .choice-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+    .type-input {
+        background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+        color: var(--text); font-size: 1rem; padding: 0.55rem 1rem;
+        width: 100%; max-width: 300px; text-align: center; outline: none;
+    }
+    .type-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
+    .type-input.correct { border-color: var(--success); }
+    .type-input.wrong { border-color: var(--danger); }
+
+    .check-btn {
+        margin-top: 0.6rem; padding: 0.45rem 1.8rem; border-radius: 8px;
+        background: var(--accent); border: none; color: #fff; font-weight: 600;
+        font-size: 0.85rem; cursor: pointer;
+    }
+    .check-btn:hover { background: var(--accent-light); }
+
+    .result-banner {
+        margin-top: 0.6rem; padding: 0.4rem 0.8rem; border-radius: 8px;
+        font-weight: 600; font-size: 0.85rem; display: inline-block;
+    }
+    .result-banner.correct { background: rgba(46,204,113,0.15); color: var(--success); }
+    .result-banner.wrong { background: rgba(231,76,60,0.15); color: var(--danger); }
+
+    .practice-q-num { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .practice-hint { font-size: 1.05rem; font-weight: 600; color: #f39c12; margin-bottom: 0.5rem; }
+    .practice-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+    .score-bar {
+        display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem;
+        font-size: 0.85rem;
+    }
+    .score-correct { color: var(--success); font-weight: 700; }
+    .score-wrong { color: var(--danger); font-weight: 700; }
+
+    .summary-word {
+        background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+        padding: 0.6rem 1rem; margin-bottom: 0.5rem; text-align: left;
+    }
+    .summary-word .w { font-weight: 700; }
+    .summary-word .m { color: #f39c12; font-size: 0.85rem; }
+    .summary-word .badge-pass { color: var(--success); font-size: 0.75rem; }
+    .summary-word .badge-fail { color: var(--danger); font-size: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/decks" class="btn btn-sm btn-outline-secondary" style="font-size:0.75rem;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <span class="badge bg-secondary" style="font-size:0.75rem;">{{ total_due }} due</span>
+</div>
+
+{% if cards %}
+<div id="app"></div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-check-circle-fill fs-1" style="color:var(--success)"></i>
+    <p class="mt-2 text-muted" style="font-size:0.9rem;">All caught up!</p>
+    <a href="/decks" class="btn btn-primary btn-sm">Back to Decks</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CARDS = {{ cards | tojson }};
+const DECK_ID = {{ deck_id }};
+
+let learnIndex = 0;
+let practiceMode = '';
+let practiceIndex = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let results = {};
+let answered = false;
+
+const app = document.getElementById('app');
+
+function render() {
+    if (learnIndex < CARDS.length) {
+        renderLearn();
+    } else if (!practiceMode) {
+        renderModeSelect();
+    } else if (practiceIndex < CARDS.length) {
+        if (practiceMode === 'choice') renderChoice();
+        else renderWrite();
+    } else {
+        renderSummary();
+    }
+}
+
+// ─── STAGE 1: LEARN ──────────────────────────────
+function renderLearn() {
+    const c = CARDS[learnIndex];
+    let dots = '';
+    CARDS.forEach((_, i) => {
+        let cls = i < learnIndex ? 'done' : (i === learnIndex ? 'active' : '');
+        dots += '<div class="progress-dot ' + cls + '"></div>';
+    });
+
+    let html = '<div class="stage-card">';
+    html += '<div class="progress-dots">' + dots + '</div>';
+    html += '<div class="word-big">' + esc(c.word) + '</div>';
+    if (c.pronunciation) html += '<div class="word-pron">' + esc(c.pronunciation) + '</div>';
+    if (c.image) html += '<img src="' + esc(c.image) + '" class="word-img">';
+    if (c.meaning) html += '<div class="word-meaning">' + esc(c.meaning) + '</div>';
+    if (c.example) html += '<div class="word-example">' + esc(c.example) + '</div>';
+
+    let wordAudio = '';
+    let exampleAudio = '';
+    if (c.audio_files) {
+        c.audio_files.forEach(a => {
+            if (a.includes('_example')) exampleAudio = a;
+            else wordAudio = a;
+        });
+    }
+
+    html += '<div class="word-audio">';
+    if (wordAudio) html += '<audio id="audio-word" preload="auto" src="/static/media/' + esc(wordAudio) + '"></audio>';
+    if (exampleAudio) html += '<audio id="audio-example" preload="auto" src="/static/media/' + esc(exampleAudio) + '"></audio>';
+    html += '<div class="d-flex gap-2 justify-content-center mt-2">';
+    if (wordAudio) html += '<button class="btn btn-sm btn-outline-secondary" onclick="playWord()" style="font-size:0.75rem;"><i class="bi bi-volume-up-fill"></i> Word</button>';
+    if (exampleAudio) html += '<button class="btn btn-sm btn-outline-secondary" onclick="playExample()" style="font-size:0.75rem;"><i class="bi bi-chat-quote-fill"></i> Sentence</button>';
+    html += '</div></div>';
+
+    html += '<div style="margin-top:1rem;">';
+    html += '<button class="nav-btn primary" onclick="nextLearn()">';
+    html += learnIndex < CARDS.length - 1 ? 'Next <i class="bi bi-arrow-right"></i>' : 'Start Activity <i class="bi bi-lightning-fill"></i>';
+    html += '</button>';
+    html += '</div>';
+    html += '</div>';
+    app.innerHTML = html;
+
+    setTimeout(playWord, 300);
+}
+
+function playWord() {
+    const a = document.getElementById('audio-word');
+    if (a) {
+        a.currentTime = 0;
+        a.play().catch(() => {});
+        a.onended = function() {
+            setTimeout(playExample, 400);
+        };
+    }
+}
+
+function playExample() {
+    const a = document.getElementById('audio-example');
+    if (a) { a.currentTime = 0; a.play().catch(() => {}); }
+}
+
+function nextLearn() {
+    learnIndex++;
+    answered = false;
+    render();
+}
+
+// ─── MODE SELECT ──────────────────────────────────
+function renderModeSelect() {
+    let html = '<div class="stage-card">';
+    html += '<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">You learned ' + CARDS.length + ' words. Now practice!</div>';
+    html += '<div class="mode-select">';
+    html += '<button class="mode-btn" onclick="selectMode(\'choice\')">';
+    html += '<div class="mode-title"><i class="bi bi-grid-3x3-gap"></i> Multiple Choice</div>';
+    html += '<div class="mode-desc">Pick the correct word from options</div>';
+    html += '</button>';
+    html += '<button class="mode-btn" onclick="selectMode(\'write\')">';
+    html += '<div class="mode-title"><i class="bi bi-keyboard"></i> Write the Word</div>';
+    html += '<div class="mode-desc">Type the English word from the meaning</div>';
+    html += '</button>';
+    html += '</div>';
+    html += '</div>';
+    app.innerHTML = html;
+}
+
+function selectMode(mode) {
+    practiceMode = mode;
+    practiceIndex = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    results = {};
+    answered = false;
+    render();
+}
+
+// ─── MULTIPLE CHOICE ──────────────────────────────
+function renderChoice() {
+    const c = CARDS[practiceIndex];
+    const others = CARDS.filter((_, i) => i !== practiceIndex);
+    const options = shuffle([c.word, ...others.map(o => o.word)]);
+
+    let html = '<div class="stage-card">';
+    html += '<div class="practice-q-num">Question ' + (practiceIndex + 1) + ' of ' + CARDS.length + '</div>';
+    if (c.image) html += '<img src="' + esc(c.image) + '" class="word-img" style="max-height:120px;">';
+    html += '<div class="practice-hint">' + esc(c.meaning) + '</div>';
+    if (c.pronunciation) html += '<div class="practice-sub">' + esc(c.pronunciation) + '</div>';
+    html += '<div class="choices">';
+    options.forEach(opt => {
+        html += '<button class="choice-btn" onclick="checkChoice(this,\'' + esc(opt) + '\',\'' + esc(c.word) + '\')">' + esc(opt) + '</button>';
+    });
+    html += '</div>';
+    html += '<div id="result-area"></div>';
+    html += '</div>';
+    app.innerHTML = html;
+    answered = false;
+}
+
+function checkChoice(btn, selected, correct) {
+    if (answered) return;
+    answered = true;
+    const isCorrect = selected.toLowerCase() === correct.toLowerCase();
+    if (isCorrect) { correctCount++; playCorrect(); } else { wrongCount++; playWrong(); }
+    results[correct] = isCorrect;
+
+    document.querySelectorAll('.choice-btn').forEach(b => {
+        b.classList.add('disabled');
+        if (b.textContent.trim().toLowerCase() === correct.toLowerCase()) b.classList.add('correct');
+    });
+    if (!isCorrect) btn.classList.add('wrong');
+
+    const ra = document.getElementById('result-area');
+    ra.innerHTML = '<div class="result-banner ' + (isCorrect ? 'correct' : 'wrong') + '">' +
+        (isCorrect ? 'Correct!' : 'Wrong — answer: ' + correct) + '</div><br>' +
+        '<button class="nav-btn primary" style="margin-top:0.5rem;" onclick="nextPractice()">Continue</button>';
+}
+
+// ─── WRITE THE WORD ───────────────────────────────
+function renderWrite() {
+    const c = CARDS[practiceIndex];
+
+    let html = '<div class="stage-card">';
+    html += '<div class="practice-q-num">Question ' + (practiceIndex + 1) + ' of ' + CARDS.length + '</div>';
+    if (c.image) html += '<img src="' + esc(c.image) + '" class="word-img" style="max-height:120px;">';
+    html += '<div class="practice-hint">' + esc(c.meaning) + '</div>';
+    if (c.pronunciation) html += '<div class="practice-sub">' + esc(c.pronunciation) + '</div>';
+    html += '<input type="text" class="type-input" id="write-input" placeholder="Type the word..." autocomplete="off" autofocus>';
+    html += '<br><button class="check-btn" onclick="checkWrite()">Check</button>';
+    html += '<div id="result-area"></div>';
+    html += '</div>';
+    app.innerHTML = html;
+    answered = false;
+
+    const inp = document.getElementById('write-input');
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') checkWrite(); });
+    inp.focus();
+}
+
+function checkWrite() {
+    if (answered) return;
+    const inp = document.getElementById('write-input');
+    const val = inp.value.trim();
+    if (!val) return;
+
+    const c = CARDS[practiceIndex];
+    const isCorrect = val.toLowerCase() === c.word.toLowerCase();
+    answered = true;
+    if (isCorrect) { correctCount++; playCorrect(); } else { wrongCount++; playWrong(); }
+    results[c.word] = isCorrect;
+
+    inp.disabled = true;
+    inp.classList.add(isCorrect ? 'correct' : 'wrong');
+
+    const ra = document.getElementById('result-area');
+    ra.innerHTML = '<div class="result-banner ' + (isCorrect ? 'correct' : 'wrong') + '">' +
+        (isCorrect ? 'Correct!' : 'Wrong — answer: ' + c.word) + '</div><br>' +
+        '<button class="nav-btn primary" style="margin-top:0.5rem;" onclick="nextPractice()">Continue</button>';
+}
+
+// ─── SUMMARY ──────────────────────────────────────
+function nextPractice() {
+    practiceIndex++;
+    answered = false;
+    render();
+}
+
+function renderSummary() {
+    let html = '<div class="stage-card">';
+    html += '<div style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">Session Complete</div>';
+
+    html += '<div class="score-bar">';
+    html += '<span class="score-correct"><i class="bi bi-check-circle"></i> ' + correctCount + ' correct</span>';
+    html += '<span class="score-wrong"><i class="bi bi-x-circle"></i> ' + wrongCount + ' wrong</span>';
+    html += '</div>';
+
+    CARDS.forEach(c => {
+        const pass = results[c.word];
+        html += '<div class="summary-word">';
+        html += '<span class="w">' + esc(c.word) + '</span>';
+        if (c.meaning) html += ' <span class="m">— ' + esc(c.meaning) + '</span>';
+        html += ' <span class="' + (pass ? 'badge-pass' : 'badge-fail') + '">';
+        html += pass ? ' <i class="bi bi-check-lg"></i>' : ' <i class="bi bi-x-lg"></i>';
+        html += '</span>';
+        html += '</div>';
+    });
+
+    html += '<div style="margin-top:1rem;">';
+    html += '<button class="nav-btn primary" onclick="submitAll()">Continue & Save</button>';
+    html += '</div>';
+    html += '</div>';
+    app.innerHTML = html;
+}
+
+async function submitAll() {
+    const promises = CARDS.map(c =>
+        fetch('/api/cards/review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                card_id: c.id,
+                ease: results[c.word] ? 3 : 1,
+                time_ms: 0,
+            }),
+        })
+    );
+    await Promise.all(promises);
+    window.location.href = '/review/' + DECK_ID;
+}
+
+// ─── HELPERS ──────────────────────────────────────
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playCorrect() {
+    const t = audioCtx.currentTime;
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.25, t + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + i * 0.1);
+        osc.stop(t + i * 0.1 + 0.25);
+    });
+}
+
+function playWrong() {
+    const t = audioCtx.currentTime;
+    [220, 185].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.2, t + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + i * 0.15);
+        osc.stop(t + i * 0.15 + 0.3);
+    });
+}
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+render();
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Progress{% endblock %}
+
+{% block content %}
+<h5 class="fw-bold mb-3">Your Progress</h5>
+
+<div class="row g-2 mb-3">
+    <div class="col-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="stat-number" style="color:var(--danger)">{{ streak }}</div>
+                <div class="stat-label">Streak</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="stat-number" style="color:var(--success)">{{ overall.reviewed_today }}</div>
+                <div class="stat-label">Today</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="stat-number" style="color:var(--accent)">{{ overall.accuracy_today }}%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="stat-number" style="color:var(--info)">{{ overall.total }}</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Cards by Status</div>
+            <div class="card-body" style="height:220px;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Daily Reviews (30d)</div>
+            <div class="card-body" style="height:220px;">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Deck Breakdown</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Deck</th>
+                        <th>New</th>
+                        <th>Learning</th>
+                        <th>Review</th>
+                        <th>Today</th>
+                        <th>Acc%</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deck in decks_stats %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">{{ deck.name }}</td>
+                        <td><span class="badge" style="background:var(--accent)">{{ deck.new }}</span></td>
+                        <td><span class="badge" style="background:var(--warning)">{{ deck.learning }}</span></td>
+                        <td><span class="badge" style="background:var(--success)">{{ deck.review }}</span></td>
+                        <td>{{ deck.reviewed_today }}</td>
+                        <td>{{ deck.accuracy_today }}%</td>
+                        <td class="pe-3">
+                            <a href="/review/{{ deck.id }}" class="btn btn-sm btn-primary py-0 px-2" style="font-size:0.75rem;">
+                                <i class="bi bi-play-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartColors = {
+    accent: '#6c63ff',
+    success: '#2ecc71',
+    warning: '#f39c12',
+    text: '#8a8aa0',
+    border: '#33345a',
+};
+
+Chart.defaults.color = chartColors.text;
+Chart.defaults.borderColor = chartColors.border;
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['New', 'Learning', 'Review'],
+        datasets: [{
+            data: [{{ overall.new }}, {{ overall.learning }}, {{ overall.review }}],
+            backgroundColor: [chartColors.accent, chartColors.warning, chartColors.success],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } } }
+    }
+});
+
+const dailyData = {{ daily_stats | tojson }};
+new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+        labels: dailyData.map(d => d.date.slice(5)),
+        datasets: [
+            { label: 'Reviewed', data: dailyData.map(d => d.reviewed), backgroundColor: chartColors.accent, borderRadius: 3 },
+            { label: 'Correct', data: dailyData.map(d => d.correct), backgroundColor: chartColors.success, borderRadius: 3 }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: chartColors.border } }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } } }
+    }
+});
+</script>
+{% endblock %}

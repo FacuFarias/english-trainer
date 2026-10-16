@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Import{% endblock %}
+
+{% block content %}
+<h5 class="fw-bold mb-3">Import Deck</h5>
+
+{% if error %}
+<div class="alert alert-danger py-2" style="font-size:0.85rem;">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success py-2" style="font-size:0.85rem;">
+    <i class="bi bi-check-circle-fill"></i> Imported successfully!
+    <span class="ms-2">{{ decks_imported }} deck(s), {{ cards_imported }} card(s), {{ media_imported }} media file(s)</span>
+</div>
+<div class="text-center mt-2">
+    <a href="/decks" class="btn btn-primary btn-sm">View Decks</a>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form action="/import" method="post" enctype="multipart/form-data">
+            <div class="mb-2">
+                <label for="file" class="form-label">Select .apkg file</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".apkg" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-cloud-upload-fill"></i> Import
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">How to export from Anki</div>
+    <div class="card-body" style="font-size:0.85rem;">
+        <ol class="mb-0 ps-3">
+            <li>Open Anki &rarr; <strong>File &gt; Export</strong></li>
+            <li>Select <strong>Anki Deck Package (.apkg)</strong></li>
+            <li>Check <strong>Include media</strong> if needed</li>
+            <li>Click <strong>Export</strong> and upload the file here</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

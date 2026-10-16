@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}English Trainer{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+    <h4 style="font-weight:700;">Welcome back</h4>
+    <p class="text-muted" style="font-size:0.9rem;">What would you like to do today?</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-4">
+        <a href="/decks" class="text-decoration-none">
+            <div class="card text-center h-100" style="cursor:pointer;">
+                <div class="card-body py-3">
+                    <i class="bi bi-layers-fill fs-3" style="color:var(--accent)"></i>
+                    <div class="mt-2 fw-semibold" style="font-size:0.85rem;">Study</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-4">
+        <a href="/import" class="text-decoration-none">
+            <div class="card text-center h-100" style="cursor:pointer;">
+                <div class="card-body py-3">
+                    <i class="bi bi-cloud-upload-fill fs-3" style="color:var(--success)"></i>
+                    <div class="mt-2 fw-semibold" style="font-size:0.85rem;">Import</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-4">
+        <a href="/stats" class="text-decoration-none">
+            <div class="card text-center h-100" style="cursor:pointer;">
+                <div class="card-body py-3">
+                    <i class="bi bi-bar-chart-fill fs-3" style="color:var(--info)"></i>
+                    <div class="mt-2 fw-semibold" style="font-size:0.85rem;">Progress</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
